@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - LAKSHYA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .flash-message {
+            animation: flash 3s ease-out;
+        }
+
+        @keyframes flash {
+            0% { opacity: 0; transform: translateY(-20px); }
+            10% { opacity: 1; transform: translateY(0); }
+            90% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-20px); }
+        }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+        }
+
+        .gradient-text {
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+    </style>
+</head>
+<body class="bg-white text-gray-800 min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-br from-blue-50 to-purple-50 opacity-80"></div>
+
+    <div class="flex flex-col items-center mb-8 z-10">
+        <h1 class="text-5xl font-bold mb-2 gradient-text">LAKSHYA</h1>
+        <p class="text-gray-600 font-medium">CHASE THE BULLSEYE</p>
+    </div>
+
+    <div class="glass-effect p-8 max-w-md w-full relative z-10">
+        <h2 class="text-2xl font-bold mb-6 text-center text-gray-800">
+            <i class="fas fa-crosshairs mr-2 text-blue-500"></i> Login with your credentials
+        </h2>
+
+        <form id="loginForm" class="space-y-6" method="POST">
+            <div>
+                <label for="email" class="block text-sm font-medium mb-1 text-gray-700">Email Address</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-envelope text-blue-400"></i>
+                    </div>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        placeholder="Enter your email" 
+                        required 
+                        class="w-full pl-10 pr-4 py-3 bg-white bg-opacity-70 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-800"
+                    >
+                </div>
+            </div>
+
+            <button 
+                type="submit" 
+                id="loginBtn"
+                class="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition-all duration-300 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+            >
+                <i class="fas fa-sign-in-alt mr-2"></i> Access System
+            </button>
+        </form>
+
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div id="flashMessages" class="mt-4">
+                {% for message in messages %}
+                <div class="p-3 mb-2 rounded-lg bg-red-100 text-red-800 flash-message">
+                    <i class="fas fa-exclamation-circle mr-2"></i> {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        {% endwith %}
+    </div>
+
+</body>
+</html>

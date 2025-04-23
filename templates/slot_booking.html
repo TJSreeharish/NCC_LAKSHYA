@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slot Booking System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .slot-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .slot-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .slot-card input[type="radio"]:checked + .slot-content {
+            border: 2px solid #3b82f6;
+            background-color: #f0f7ff;
+        }
+        .date-btn.active {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .flash-messages {
+            animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <!-- Header -->
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">LAKSHYA SLOT BOOKING</h1>
+            <p class="text-gray-600">Select your preferred date and time slot</p>
+        </header>
+
+        <!-- Date Selection -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">Select Date</h2>
+            <form method="get" action="{{ url_for('slot_booking') }}" class="flex flex-wrap gap-3">
+                {% for d in dates %}
+                    <button type="submit" name="date" value="{{ d }}" 
+                            class="px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors 
+                                   {% if d == date %}date-btn active bg-blue-500 text-white border-blue-500{% endif %}">
+                        {{ d }}
+                    </button>
+                {% endfor %}
+            </form>
+        </div>
+
+        <!-- Current Date Display -->
+        <div class="mb-6">
+            <h2 class="text-xl font-semibold text-gray-700">
+                Available Slots for <span class="text-blue-600">{{ date }}</span>
+            </h2>
+        </div>
+
+        <!-- Slot Grid -->
+        <form method="POST" class="mb-8">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {% for s in slots %}
+                    <label class="slot-card">
+                        <input type="radio" name="slot" value="{{ s.slot }}" class="hidden" 
+                               {% if s.remaining == 0 %}disabled{% else %}required{% endif %}>
+                        <div class="slot-content h-full p-4 rounded-lg border border-gray-200 
+                                    {% if s.remaining == 0 %}bg-gray-100 text-gray-500{% else %}bg-white hover:border-blue-300{% endif %}">
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="font-bold text-lg {% if s.remaining == 0 %}text-gray-600{% else %}text-gray-800{% endif %}">
+                                    {{ s.label }}
+                                </span>
+                                {% if s.remaining > 0 %}
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                        <i class="fas fa-check-circle mr-1"></i> Available
+                                    </span>
+                                {% else %}
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                        <i class="fas fa-times-circle mr-1"></i> Booked
+                                    </span>
+                                {% endif %}
+                            </div>
+                            <div class="text-sm text-gray-500 mb-1">{{ date }}</div>
+                            <div class="mt-3">
+                                <span class="font-bold {% if s.remaining == 0 %}text-gray-600{% else %}text-blue-600{% endif %}">
+                                    {{ s.remaining }} / 30
+                                </span>
+                                <span class="text-sm text-gray-500">slots remaining</span>
+                            </div>
+                        </div>
+                    </label>
+                {% endfor %}
+            </div>
+
+            <!-- Submit Button -->
+            <div class="mt-8 text-center">
+                <button type="submit" 
+                        class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition-colors">
+                    <i class="fas fa-calendar-check mr-2"></i> Book Selected Slot
+                </button>
+            </div>
+        </form>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash-messages mb-6">
+                    {% for message in messages %}
+                        <div class="p-4 mb-3 rounded-lg bg-blue-50 text-blue-800 border border-blue-200 flex items-start">
+                            <i class="fas fa-info-circle mt-1 mr-3 text-blue-500"></i>
+                            <div>{{ message }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Footer / Logout -->
+        <div class="border-t border-gray-200 pt-6 text-center">
+            <a href="{{ url_for('logout') }}" class="text-gray-600 hover:text-gray-800 transition-colors">
+                <i class="fas fa-sign-out-alt mr-2"></i> Logout
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Enhance radio selection
+        document.querySelectorAll('.slot-card input[type="radio"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                document.querySelectorAll('.slot-content').forEach(el => {
+                    el.classList.remove('border-blue-500', 'bg-blue-50');
+                });
+                if (this.checked) {
+                    this.nextElementSibling.classList.add('border-blue-500', 'bg-blue-50');
+                }
+            });
+        });
+
+        // Add animation to available slots on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                document.querySelectorAll('.slot-card input[type="radio"]:not(:disabled)').forEach(el => {
+                    el.parentElement.classList.add('animate-pulse');
+                    setTimeout(() => {
+                        el.parentElement.classList.remove('animate-pulse');
+                    }, 2000);
+                });
+            }, 500);
+        });
+    </script>
+</body>
+</html>
