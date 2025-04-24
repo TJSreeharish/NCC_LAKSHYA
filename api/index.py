@@ -27,14 +27,17 @@ dates = ["26 April", "27 April"]
 
 # Initialize slot counts if not already
 def initialize_slot_counts():
+    print("Initializing slot counts...")
     for date in dates:
         for slot_code, _ in slots:
-            booking_db.slot_counts.update_one(
+            result = booking_db.slot_counts.update_one(
                 {"date": date, "slot": slot_code},
                 {"$setOnInsert": {"count": 0}},
                 upsert=True
             )
+            print(f"Initialized {date} {slot_code}: {result.upserted_id is not None}")
 
+# Call initialization at startup
 initialize_slot_counts()
 
 # Login route
@@ -59,6 +62,9 @@ def slot_booking():
     if "email" not in session:
         return redirect(url_for("login"))
 
+    # Always ensure slot counts are initialized when accessing booking page
+    initialize_slot_counts()
+    
     selected_date = request.args.get("date") or dates[0]
     email = session["email"]
     existing_booking = booking_db.bookings.find_one({"email": email})
@@ -67,7 +73,7 @@ def slot_booking():
     slot_data = []
     for slot_code, slot_label in slots:
         count_doc = booking_db.slot_counts.find_one({"date": selected_date, "slot": slot_code})
-        count = count_doc["count"] if count_doc else 0
+        count = count_doc["count"] if count_doc and "count" in count_doc else 0
         remaining = 30 - count
         slot_data.append({
             "slot": slot_code,
@@ -82,14 +88,23 @@ def slot_booking():
 
         if existing_booking:
             flash("Your slot has already been booked. Only one booking per person is allowed.")
+            return redirect(url_for("slot_booking", date=selected_date))
         else:
+            # First ensure the document exists
+            booking_db.slot_counts.update_one(
+                {"date": selected_date, "slot": slot},
+                {"$setOnInsert": {"count": 0}},
+                upsert=True
+            )
+            
+            # Then try to update it with atomic operation
             result = booking_db.slot_counts.find_one_and_update(
                 {"date": selected_date, "slot": slot, "count": {"$lt": 30}},
                 {"$inc": {"count": 1}},
                 return_document=ReturnDocument.AFTER
             )
 
-            if result:
+            if result and "count" in result:
                 booking_db.bookings.insert_one({
                     "email": email,
                     "date": selected_date,
@@ -99,7 +114,9 @@ def slot_booking():
                 flash("Booking confirmed!")
                 return redirect(url_for("slot_booking", date=selected_date))
             else:
+                print(f"DEBUG - Failed booking: date={selected_date}, slot={slot}, result={result}")
                 flash("Slot full! Please choose another.")
+                return redirect(url_for("slot_booking", date=selected_date))
 
     return render_template(
         "slot_booking.html",
@@ -115,6 +132,7 @@ def slot_booking():
 def logout():
     session.clear()
     return redirect(url_for("login"))
+
 
 if __name__ == '__main__':
     app.run(debug=True)
